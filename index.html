@@ -153,15 +153,16 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
  .card{background:none;border:0;box-shadow:none;padding:0}
  h1 #cnt{position:absolute;left:16px;right:16px;top:calc(var(--hh) - 17px);margin:0;font-size:12px;filter:url(#cntOm);line-height:1.2}
  /* 登入後：章魚哥縮小靠右，和「標題＋上傳照片」同一橫排、等高 */
- #panel{--ph:clamp(56px,calc((100vw - 220px)/2.4),96px);--H:calc(40px + var(--ph));--iw:calc(var(--H)*1.3585)}
+ #panel{--ph:clamp(76px,calc((100vw - 154px)/2.2335),130px);--iw:calc(var(--ph)*1.3585)}
  #panel.in{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:12px;align-content:start;padding-top:46px}
  #panel.in #reg{display:contents}
- #panel.in #lg{grid-column:2;grid-row:1 / span 2;width:var(--iw);height:var(--H);margin:0;align-self:start;justify-self:end}
+ #panel.in #lg{grid-column:2;grid-row:2;width:var(--iw);height:var(--ph);margin:0;align-self:start;justify-self:end}
  #panel.in #lg img{width:100%;height:100%;object-fit:contain}
- #panel.in #reg>h2{grid-column:1;grid-row:1;height:28px;margin:0;line-height:28px;font-size:clamp(17px,5vw,22px);letter-spacing:.1em;white-space:nowrap}
+ #panel.in #reg>h2{grid-column:1 / -1;grid-row:1;height:28px;margin:0;line-height:28px;font-size:clamp(17px,5vw,22px);letter-spacing:.1em;white-space:nowrap}
  #panel.in #reg>.row{grid-column:1;grid-row:2;gap:12px;height:var(--ph);min-width:0}
  #panel.in .row>div:not(#prev){min-width:0}
- #panel.in #prev{width:calc(var(--ph)*.875);height:var(--ph);font-size:11px}
+ #panel.in #pick{white-space:nowrap;padding:8px 9px;font-size:13px}
+ #panel.in #prev{width:calc(var(--ph)*.875);height:var(--ph);font-size:12px}
  #panel.in #fname{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
  #panel.in #reg>:not(h2):not(.row){grid-column:1 / -1}
 }
