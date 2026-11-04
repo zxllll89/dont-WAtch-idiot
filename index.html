@@ -253,7 +253,7 @@ let members=[],membersRef=null,uid=null,online=true,known=null,lastMine=null;
 let tT=null;function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('on'),2800)}
 function loadScript(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>bad(new Error('無法載入 '+src));document.head.appendChild(s)})}
 function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(members))}catch(e){toast('瀏覽器儲存空間不足，資料可能無法保留。')}}
-const canEdit=()=>true;
+let authed=false;const canEdit=()=>authed;
 
 // 預設頭像（剪影）
 const DEF='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 160"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4c08a"/><stop offset="1" stop-color="#c4703a"/></linearGradient></defs><rect width="140" height="160" fill="url(#g)"/><circle cx="70" cy="62" r="26" fill="#7a4a2a" opacity=".75"/><path d="M18 160c0-38 22-56 52-56s52 18 52 56z" fill="#7a4a2a" opacity=".75"/></svg>');
@@ -295,12 +295,14 @@ function addMember(name,deeds,img){
  }
  return true}
 function updateMember(m,fields){
+ if(!authed){toast('請先登入才能編輯');return}
  Object.assign(m,fields);
  if(FB_ON){
   const f={name:fields.name,deeds:fields.deeds};if('img' in fields)f.img=fields.img;
   membersRef.child(m.id).update(f).catch(e=>toast('儲存失敗：'+(e.code||e.message)));
  }else{saveLocal();render()}}
 function removeMember(m){
+ if(!authed){toast('請先登入才能編輯');return}
  if(FB_ON){firebase.database().ref().update({['members/'+m.id]:null,['comments/'+m.id]:null}).catch(e=>toast('刪除失敗：'+(e.code||e.message)))}
  else{members=members.filter(x=>x.id!==m.id);saveLocal();const c=loadCmts();delete c[m.id];saveCmts(c);render()}}
 
@@ -342,6 +344,7 @@ lg.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPw()}};
 function tryPw(){
  if(pwi.value.trim()===PASS){
   pwi.value='';pw.hidden=true;$('lgtxt').hidden=true;reg.hidden=false;panel.classList.add('in');
+   authed=true;if(cur&&modal.classList.contains('on'))setEdit(editing);if(cMid)drawComments(cList);
   setTimeout(()=>$('name').focus(),50);return}
  toast('密碼錯誤');pwi.value='';
  pw.classList.remove('bad');void pw.offsetWidth;pw.classList.add('bad');pwi.focus()}
@@ -434,7 +437,7 @@ function flip(mutate){
 }
 function cancelPress(){if(press){clearTimeout(press.t);press=null}}
 wall.addEventListener('pointerdown',e=>{
- if(drag||(e.pointerType==='mouse'&&e.button!==0))return;
+ if(!authed||drag||(e.pointerType==='mouse'&&e.button!==0))return;
  const f=e.target.closest('.frame');if(!f)return;
  cancelPress();
  const p={f,id:e.pointerId,x:e.clientX,y:e.clientY};
@@ -502,6 +505,7 @@ window.addEventListener('pointerup',endPointer);
 window.addEventListener('pointercancel',endPointer);
 document.addEventListener('touchmove',e=>{if(drag)e.preventDefault()},{passive:false});
 function saveOrder(){
+ if(!authed)return;
  const ids=[...wall.children].map(c=>c.dataset.id).filter(Boolean);
  if(ids.length===members.length&&ids.every((id,i)=>id===members[i].id))return;
  const by=new Map(members.map(m=>[m.id,m]));
@@ -514,7 +518,7 @@ function saveOrder(){
   if(membersRef&&Object.keys(upd).length)firebase.database().ref().update(upd).catch(e=>{toast('排序儲存失敗：'+(e.code||e.message))});
  }else{saveLocal();render()}}
 
-/* ---------- 留言：任何人可新增與刪除，不能修改 ---------- */
+/* ---------- 留言：任何人可新增；刪除需登入 ---------- */
 const CKEY='hof-comments-v1',NKEY='hof-nick';
 function loadCmts(){try{return JSON.parse(localStorage.getItem(CKEY)||'{}')}catch(e){return {}}}
 function saveCmts(c){try{localStorage.setItem(CKEY,JSON.stringify(c))}catch(e){toast('瀏覽器儲存空間不足')}}
@@ -548,7 +552,7 @@ function drawComments(list){
   del.onclick=()=>{
    if(!del.classList.contains('sure')){del.classList.add('sure');del.textContent='確定刪除？';t=setTimeout(()=>{del.classList.remove('sure');del.textContent='刪除'},3000);return}
    clearTimeout(t);removeComment(c)};
-  h.append(l,del);
+  if(authed)h.append(l,del);else h.append(l);
   const tx=document.createElement('div');tx.className='t';tx.textContent=c.text;
   w.append(h,tx);box.append(w)});
  box.scrollTop=box.scrollHeight;
