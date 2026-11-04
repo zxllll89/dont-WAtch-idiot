@@ -85,10 +85,11 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
 
 /* 登入入口：圖片（hover 微放大）→ 密碼 → 登錄區塊 */
 .sp{font-family:"Spongeboy","Impact","Arial Black",sans-serif}
-#lg{display:block;width:100%;flex:none;margin-top:calc(31vh - 34px);cursor:pointer;outline:none;transition:transform .2s,margin-top .35s ease,width .35s ease;filter:drop-shadow(0 9px 7px rgba(0,25,55,.35));-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+#lg{display:block;width:100%;flex:none;margin-top:0;cursor:pointer;outline:none;transition:transform .2s,margin-top .35s ease,width .35s ease;filter:drop-shadow(0 9px 7px rgba(0,25,55,.35));-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 #lg img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none}
 #lg:hover,#lg:focus-visible{transform:scale(1.05)}
 #panel.in #lg{cursor:default;margin-top:clamp(0px,2vh,20px);width:72%;align-self:center}
+@media (min-width:901px){#panel::before,#panel::after{content:"";flex:1 1 0;min-height:0}}
 #panel.in #lg:hover,#panel.in #lg:focus-visible{transform:none}
 #lgtxt{text-align:center;font-size:clamp(44px,3.3vw,58px);line-height:1;letter-spacing:.04em;color:#c0120a;white-space:nowrap;text-shadow:0.055em 0.000em 0 #4c0200,0.051em 0.021em 0 #4c0200,0.040em 0.038em 0 #4c0200,0.022em 0.050em 0 #4c0200,0.002em 0.055em 0 #4c0200,-0.019em 0.052em 0 #4c0200,-0.037em 0.041em 0 #4c0200,-0.049em 0.024em 0 #4c0200,-0.055em 0.004em 0 #4c0200,-0.052em -0.017em 0 #4c0200,-0.042em -0.035em 0 #4c0200,-0.026em -0.049em 0 #4c0200,-0.006em -0.055em 0 #4c0200,0.015em -0.053em 0 #4c0200,0.034em -0.043em 0 #4c0200,0.048em -0.028em 0 #4c0200,0.054em -0.008em 0 #4c0200}
 .card{background:var(--panel);border:3px solid #24150a;border-radius:6px;padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:14px;animation:pop .28s ease both}
