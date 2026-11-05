@@ -60,7 +60,7 @@ h1 .sub{line-height:1;padding-bottom:0;margin-bottom:calc(var(--logo)*.0305 - .1
 .frame img{-webkit-user-drag:none;pointer-events:none}
 #wall.dragging{-webkit-user-select:none;user-select:none}
 .dragging .frame:hover{transform:none}
-.frame.ph{opacity:.3}
+.frame.dph{opacity:.3}
 .frame.ghost{position:fixed;z-index:60;margin:0;pointer-events:none;animation:none !important;transition:none;transform:scale(1.12);opacity:.97;will-change:transform,left,top;filter:drop-shadow(0 24px 14px rgba(0,25,55,.45))}
 
 /* 右側輸入面板 */
@@ -174,9 +174,40 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
  #card .info{width:100%;flex:none}
  #card .btn{font-size:16px;padding:10px 16px}
 }
+
+/* 開場泡泡：一打開滿屏泡泡，約 3 秒內流掉或炸開 */
+#intro{position:fixed;inset:0;z-index:200;overflow:hidden;pointer-events:none}
+#intro::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,rgba(130,208,244,.97),rgba(58,138,200,.97));animation:introBg 1.3s 1.3s ease-in forwards}
+#intro .bb{position:absolute;border-radius:50%;will-change:transform,opacity;
+ background:radial-gradient(circle at 30% 26%,rgba(255,255,255,.95) 0 5%,rgba(255,255,255,.28) 16%,rgba(190,236,255,.10) 52%,rgba(120,200,255,.38) 100%);
+ border:2px solid rgba(255,255,255,.6);
+ box-shadow:inset -5px -8px 12px rgba(110,190,255,.38),inset 5px 5px 9px rgba(255,255,255,.45),0 0 6px rgba(255,255,255,.25);
+ animation:bbIn .35s var(--a) cubic-bezier(.2,1.4,.4,1) backwards}
+#intro .bb.fall{animation:bbIn .35s var(--a) cubic-bezier(.2,1.4,.4,1) backwards,bbFall var(--t) var(--d) cubic-bezier(.55,0,.9,.55) forwards}
+#intro .bb.pop{animation:bbIn .35s var(--a) cubic-bezier(.2,1.4,.4,1) backwards,bbPop .35s var(--d) ease-out forwards}
+@keyframes bbIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes bbFall{0%{transform:translate(0,0)}25%{transform:translate(calc(var(--dx)*.4),7vh)}100%{transform:translate(var(--dx),calc(100vh + 260px))}}
+@keyframes bbPop{0%{transform:scale(1);opacity:1}55%{transform:scale(1.25);opacity:.8}100%{transform:scale(1.55);opacity:0}}
+@keyframes introBg{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){#intro{display:none}}
 </style>
 </head>
 <body>
+<div id="intro" aria-hidden="true"></div>
+<script>
+(function(){
+ var box=document.getElementById('intro');if(!box)return;
+ var W=innerWidth,H=innerHeight,cell=W<700?92:130,cols=Math.ceil(W/cell)+1,rows=Math.ceil(H/cell)+1,f=document.createDocumentFragment();
+ for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){
+  var sz=Math.round(cell*(.85+Math.random()*.85)),b=document.createElement('div');
+  b.className='bb '+(Math.random()<.62?'fall':'pop');
+  b.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+Math.round(c*cell-cell*.3+Math.random()*cell*.6-sz/2+cell/2)+'px;top:'+Math.round(r*cell-cell*.3+Math.random()*cell*.6-sz/2+cell/2)+'px;'
+   +'--a:'+(Math.random()*.45).toFixed(2)+'s;--d:'+(1.1+Math.random()*.85).toFixed(2)+'s;--t:'+(.9+Math.random()*.2).toFixed(2)+'s;--dx:'+Math.round((Math.random()-.5)*60)+'px';
+  f.appendChild(b)}
+ box.appendChild(f);
+ setTimeout(function(){if(box.parentNode)box.parentNode.removeChild(box)},3300);
+})();
+</script>
 <div id="bg"></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><filter id="cntO" x="-10%" y="-50%" width="120%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="1.9" result="b"/><feComponentTransfer in="b" result="e"><feFuncA type="linear" slope="22" intercept="-1.6"/></feComponentTransfer><feFlood flood-color="#1e5a96"/><feComposite in2="e" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="cntOm" x="-10%" y="-50%" width="120%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="1.25" result="b"/><feComponentTransfer in="b" result="e"><feFuncA type="linear" slope="22" intercept="-1.6"/></feComponentTransfer><feFlood flood-color="#1e5a96"/><feComposite in2="e" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="fabO" x="-10%" y="-14%" width="120%" height="128%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2.7" result="b"/><feComponentTransfer in="b" result="e"><feFuncA type="linear" slope="22" intercept="-1.6"/></feComponentTransfer><feFlood flood-color="#0f3a6b"/><feComposite in2="e" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
 <div class="app">
@@ -437,11 +468,11 @@ function flip(mutate){
 }
 function cancelPress(){if(press){clearTimeout(press.t);press=null}}
 wall.addEventListener('pointerdown',e=>{
- if(!authed||drag||(e.pointerType==='mouse'&&e.button!==0))return;
+ if(drag||(e.pointerType==='mouse'&&e.button!==0))return;
  const f=e.target.closest('.frame');if(!f)return;
  cancelPress();
  const p={f,id:e.pointerId,x:e.clientX,y:e.clientY};
- p.t=setTimeout(()=>{if(press===p){press=null;startDrag(p)}},450);
+ p.t=setTimeout(()=>{if(press!==p)return;press=null;if(authed)startDrag(p);else toast('請先登入才能調整相框順序')},450);
  press=p});
 wall.addEventListener('contextmenu',e=>{if(e.target.closest('.frame'))e.preventDefault()});
 function startDrag(p){
@@ -450,7 +481,7 @@ function startDrag(p){
  ghost.style.cssText='left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px';
  document.body.appendChild(ghost);
  drag={el,ghost,id:p.id,dx:p.x-r.left,dy:p.y-r.top,x:p.x,y:p.y};
- el.classList.add('ph');wall.classList.add('dragging');
+ el.classList.add('dph');wall.classList.add('dragging');
  suppressClick=true;
  if(navigator.vibrate)try{navigator.vibrate(18)}catch(e){}
  drag.amp=0;drag.ph=0;drag.sv=0;drag.lx=p.x;drag.ly=p.y;
@@ -497,7 +528,7 @@ function endPointer(e){
  const r=el.getBoundingClientRect();
  ghost.style.transition='left .18s,top .18s,transform .18s';
  ghost.style.left=r.left+'px';ghost.style.top=r.top+'px';ghost.style.transform='none';
- setTimeout(()=>{ghost.remove();el.classList.remove('ph')},200);
+ setTimeout(()=>{ghost.remove();el.classList.remove('dph')},200);
  saveOrder();
  if(pendingRender){pendingRender=false;render()}
  setTimeout(()=>{suppressClick=false},80)}
