@@ -175,20 +175,11 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
  #card .btn{font-size:16px;padding:10px 16px}
 }
 
-/* 開場泡泡：一打開滿屏泡泡，約 3 秒內流掉或炸開 */
+/* 開場泡泡：前中後三層（後面小而模糊、中間清楚、前面大而柔焦），約 3 秒內流掉或破掉 */
 #intro{position:fixed;inset:0;z-index:200;overflow:hidden;pointer-events:none}
-#intro::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,rgba(130,208,244,.97),rgba(58,138,200,.97));animation:introBg 1.3s 1.3s ease-in forwards}
-#intro .bb{position:absolute;border-radius:50%;will-change:transform,opacity;
- background:radial-gradient(circle at 30% 26%,rgba(255,255,255,.95) 0 5%,rgba(255,255,255,.28) 16%,rgba(190,236,255,.10) 52%,rgba(120,200,255,.38) 100%);
- border:2px solid rgba(255,255,255,.6);
- box-shadow:inset -5px -8px 12px rgba(110,190,255,.38),inset 5px 5px 9px rgba(255,255,255,.45),0 0 6px rgba(255,255,255,.25);
- animation:bbIn .35s var(--a) cubic-bezier(.2,1.4,.4,1) backwards}
-#intro .bb.fall{animation:bbIn .35s var(--a) cubic-bezier(.2,1.4,.4,1) backwards,bbFall var(--t) var(--d) cubic-bezier(.55,0,.9,.55) forwards}
-#intro .bb.pop{animation:bbIn .35s var(--a) cubic-bezier(.2,1.4,.4,1) backwards,bbPop .35s var(--d) ease-out forwards}
-@keyframes bbIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
-@keyframes bbFall{0%{transform:translate(0,0)}25%{transform:translate(calc(var(--dx)*.4),7vh)}100%{transform:translate(var(--dx),calc(100vh + 260px))}}
-@keyframes bbPop{0%{transform:scale(1);opacity:1}55%{transform:scale(1.25);opacity:.8}100%{transform:scale(1.55);opacity:0}}
-@keyframes introBg{to{opacity:0}}
+/* 背景只用模糊（固定強度）：直接模糊頁面本身，比 backdrop-filter 輕很多，動畫才不會卡；泡泡散去後 0.25 秒還原 */
+html.introing body>*:not(#intro){filter:blur(16px)}
+html.introout body>*:not(#intro){transition:filter .25s ease-out}
 @media (prefers-reduced-motion:reduce){#intro{display:none}}
 </style>
 </head>
@@ -197,15 +188,137 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
 <script>
 (function(){
  var box=document.getElementById('intro');if(!box)return;
- var W=innerWidth,H=innerHeight,cell=W<700?92:130,cols=Math.ceil(W/cell)+1,rows=Math.ceil(H/cell)+1,f=document.createDocumentFragment();
- for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){
-  var sz=Math.round(cell*(.85+Math.random()*.85)),b=document.createElement('div');
-  b.className='bb '+(Math.random()<.62?'fall':'pop');
-  b.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+Math.round(c*cell-cell*.3+Math.random()*cell*.6-sz/2+cell/2)+'px;top:'+Math.round(r*cell-cell*.3+Math.random()*cell*.6-sz/2+cell/2)+'px;'
-   +'--a:'+(Math.random()*.45).toFixed(2)+'s;--d:'+(1.1+Math.random()*.85).toFixed(2)+'s;--t:'+(.9+Math.random()*.2).toFixed(2)+'s;--dx:'+Math.round((Math.random()-.5)*60)+'px';
-  f.appendChild(b)}
- box.appendChild(f);
- setTimeout(function(){if(box.parentNode)box.parentNode.removeChild(box)},3300);
+ if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+ var root=document.documentElement,W=innerWidth,H=innerHeight,
+  /* 畫布像素上限：大螢幕不用 2 倍，泡泡本來就柔，省很多合成成本 */
+  dpr=Math.max(1,Math.min(window.devicePixelRatio||1,2,Math.sqrt(2.5e6/(W*H)))),
+  cv=document.createElement('canvas');
+ cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+ cv.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%';
+ box.appendChild(cv);
+ var ctx=cv.getContext('2d');if(!ctx){box.remove();return}
+ ctx.scale(dpr,dpr);
+ root.classList.add('introing');
+
+ /* 跟 CSS cubic-bezier 同樣的緩動 */
+ function bez(x1,y1,x2,y2){return function(x){
+  if(x<=0)return 0;if(x>=1)return 1;
+  var lo=0,hi=1,m,i;
+  for(i=0;i<22;i++){m=(lo+hi)/2;if(3*(1-m)*(1-m)*m*x1+3*(1-m)*m*m*x2+m*m*m<x)lo=m;else hi=m}
+  m=(lo+hi)/2;return 3*(1-m)*(1-m)*m*y1+3*(1-m)*m*m*y2+m*m*m}}
+ var eAppear=bez(.2,1.4,.4,1),eFall=bez(.55,0,.9,.55),eOut=bez(0,0,.58,1);
+
+ /* ---------- 泡泡「貼圖」：每種只畫一次，之後每幀只是 drawImage（不再逐顆重畫路徑）---------- */
+ var V=3;
+ function crescent(c,x,y,R,a0,a1,depth,alpha){
+  var xa=x+Math.cos(a0)*R,ya=y+Math.sin(a0)*R,am=(a0+a1)/2;
+  c.globalAlpha=alpha;c.beginPath();c.moveTo(xa,ya);c.arc(x,y,R,a0,a1);
+  c.quadraticCurveTo(x+Math.cos(am)*(R-depth*2),y+Math.sin(am)*(R-depth*2),xa,ya);c.fill();
+ }
+ function bubble(c,x,y,r,hl){
+  c.fillStyle='#fff';c.strokeStyle='#fff';c.lineCap='round';
+  c.beginPath();c.arc(x,y,r,0,6.2832);
+  c.globalAlpha=.17;c.fill();
+  c.globalAlpha=.8;c.lineWidth=Math.max(.8,r*.03+.6);c.stroke();
+  crescent(c,x,y,r*.8,hl-.75,hl+.75,r*.17,.92);
+  c.globalAlpha=.85;c.beginPath();c.arc(x+Math.cos(hl+1.2)*r*.78,y+Math.sin(hl+1.2)*r*.78,Math.max(.7,r*.055),0,6.2832);c.fill();
+  crescent(c,x,y,r*.82,.3,1.0,r*.07,.45);
+  c.globalAlpha=1;
+ }
+ function sprite(hl,blur,R){
+  var pad=Math.ceil(R*.27+blur*2.2),ss=2*(R+pad),sc=document.createElement('canvas'),c;
+  sc.width=sc.height=Math.ceil(ss*dpr);sc.R=R;sc.ss=ss;
+  c=sc.getContext('2d');c.scale(dpr,dpr);
+  if(blur>0&&'filter' in c){c.filter='blur('+blur+'px)';bubble(c,ss/2,ss/2,R,hl);c.filter='none'}
+  else if(blur>0){
+   /* 不支援 canvas filter 的瀏覽器：縮小再放大當作模糊 */
+   var k=Math.max(.14,1/(1+blur*.45)),t=document.createElement('canvas'),tc;
+   t.width=t.height=Math.max(8,Math.round(sc.width*k));tc=t.getContext('2d');tc.scale(dpr*k,dpr*k);
+   bubble(tc,ss/2,ss/2,R,hl);
+   c.setTransform(1,0,0,1,0,0);c.drawImage(t,0,0,sc.width,sc.height);
+  }else bubble(c,ss/2,ss/2,R,hl);
+  return sc;
+ }
+ function sprites(blur,R){var a=[],i;for(i=0;i<V;i++)a.push(sprite(-2.3+(Math.random()-.5)*.8,blur,R));return a}
+ /* 貼圖有大小兩種，縮放比例不會太大，邊緣才不會有鋸齒（也不必開高品質縮放，那個很慢）*/
+ var SP={back:sprites(.6,50),ms:sprites(0,50),ml:sprites(0,110),front:sprites(.7,110),sm:sprites(0,20)};
+
+ /* ---------- 擺放：同一層彼此盡量不疊，疊的話只疊一點點 ---------- */
+ var s=Math.max(.7,Math.min(1.3,W/1500)),bs=[],
+  Nm=Math.max(12,Math.min(48,Math.round(W*H/(38000*s*s)))),
+  Nb=Math.round(Nm*.8),Nf=Math.max(2,Math.round(Nm*.18));
+ function make(layer,n,gap,rmin,rvar,al,sway,ta,td0,tdr,d0,dr,pf){
+  var set;
+  var pool=[],k,j,tr,x,y,r,ok,q,dx,dy,m;
+  for(k=0;k<n;k++){
+   for(tr=0;tr<30;tr++){
+    r=(rmin+Math.random()*rvar)*s;x=Math.random()*(W+40)-20;y=Math.random()*(H+40)-20;ok=true;
+    for(j=0;j<pool.length;j++){q=pool[j];dx=x-q.x;dy=y-q.y;m=gap*(r+q.r);if(dx*dx+dy*dy<m*m){ok=false;break}}
+    if(!ok)continue;
+    pool.push({x:x,y:y,r:r});
+    set=layer===0?SP.back:layer===2?SP.front:(r<62?SP.ms:SP.ml);
+    bs.push({x:x,y:y,r:r,spr:set[(Math.random()*V)|0],al:al,A:sway*s,
+     ta:Math.random()*ta,td:td0+Math.random()*tdr,dur:d0+Math.random()*dr,
+     fall:Math.random()<pf,dx:(Math.random()-.5)*60,w:1.2+Math.random()*1.4,ph:Math.random()*6.28});
+    break;
+   }
+  }
+ }
+ /*   層  數量 間距 半徑下限 半徑變化 透明 搖擺 出現   離場時間(起,幅)  掉落時間(起,幅) 掉落比例 */
+ make(0,Nb,.8 ,18 ,26 ,.7 ,3 ,.5 ,1.0,.7 ,1.1,.25,.5);
+ make(1,Nm,.92,36 ,72 ,1  ,6 ,.45,1.1,.8 ,.9 ,.2 ,.62);
+ make(2,Nf,1.05,95 ,55 ,.85,10,.4 ,1.2,.6 ,.8 ,.15,.75);
+
+ /* 小泡泡：填在大泡泡之間的空白處（避開已經擺好的泡泡，只允許輕微貼近）*/
+ (function(){
+  var n=Math.round(Nm*1.3),k,tr,x,y,r,ok,j,q,dx,dy,m,placed=0;
+  for(k=0;k<n;k++){
+   for(tr=0;tr<40;tr++){
+    r=(7+Math.random()*13)*s;x=Math.random()*(W+20)-10;y=Math.random()*(H+20)-10;ok=true;
+    for(j=0;j<bs.length;j++){q=bs[j];dx=x-q.x;dy=y-q.y;m=.95*(r+q.r);if(dx*dx+dy*dy<m*m){ok=false;break}}
+    if(!ok)continue;
+    bs.push({x:x,y:y,r:r,spr:SP.sm[(Math.random()*V)|0],al:.85,A:2.5*s,
+     ta:.3+Math.random()*.6,td:.9+Math.random()*1.0,dur:.9+Math.random()*.4,
+     fall:Math.random()<.55,dx:(Math.random()-.5)*40,w:1.2+Math.random()*1.4,ph:Math.random()*6.28});
+    placed++;break;
+   }
+  }
+ })();
+
+ /* ---------- 動畫 ---------- */
+ var last=null,t=0,done=false,out=false;
+ function finish(){if(done)return;done=true;root.classList.remove('introing');root.classList.remove('introout');if(box.parentNode)box.parentNode.removeChild(box)}
+ function frame(now){
+  if(done)return;
+  if(last===null)last=now;
+  /* 用「虛擬時間」：就算某一幀被頁面載入卡住，動畫也是接著播，不會一下跳掉 */
+  t+=Math.min((now-last)/1000,.05);last=now;
+  if(!out&&t>=2.6){out=true;root.classList.add('introout');root.classList.remove('introing')}
+  ctx.clearRect(0,0,W,H);
+  for(var k=0;k<bs.length;k++){
+   var b=bs[k];if(t<b.ta)continue;
+   var u=(t-b.ta)/.35,sc=u<1?eAppear(u):1,a=1,
+    bx=b.x+Math.sin(t*b.w+b.ph)*b.A,by=b.y+Math.cos(t*b.w*.8+b.ph)*b.A*.6,x=bx,y=by;
+   if(t>=b.td){
+    if(b.fall){
+     /* 單一條連續加速曲線：一開始微微下沉、之後越掉越快，速度全程連續，不會有一頓一頓 */
+     var p=(t-b.td)/b.dur;if(p>=1)continue;
+     var D=H+260,f=.1*p+.9*p*p,g=p*p*(3-2*p);
+     y=by+D*f;x=bx+b.dx*g;
+    }else{
+     var q=(t-b.td)/.35;if(q>=1)continue;
+     if(q<.55){var w=eOut(q/.55);sc*=1+.25*w;a=1-.2*w}
+     else{var w2=eOut((q-.55)/.45);sc*=1.25+.3*w2;a=.8-.8*w2}
+    }
+   }
+   var d=b.spr.ss*(b.r*sc/b.spr.R);
+   ctx.globalAlpha=a*b.al;ctx.drawImage(b.spr,x-d/2,y-d/2,d,d);
+  }
+  ctx.globalAlpha=1;
+  if(t<3.1)requestAnimationFrame(frame);else finish();
+ }
+ requestAnimationFrame(frame);
+ setTimeout(finish,7000);
 })();
 </script>
 <div id="bg"></div>
