@@ -178,7 +178,10 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
 /* 開場泡泡：前中後三層（後面小而模糊、中間清楚、前面大而柔焦），約 3 秒內流掉或破掉 */
 #intro{position:fixed;inset:0;z-index:200;overflow:hidden;pointer-events:none}
 /* 背景只用模糊（固定強度）：直接模糊頁面本身，比 backdrop-filter 輕很多，動畫才不會卡；泡泡散去後 0.25 秒還原 */
-html.introing body>*:not(#intro){filter:blur(16px)}
+html.introing body>*:not(#intro){filter:blur(16px) brightness(1.1)}
+/* 開場淺藍色光：疊一層柔和的淺藍光暈，讓一開始比較亮、有泡泡的光感；跟背景模糊一起淡出 */
+#intro::before{content:"";position:absolute;inset:0;opacity:1;transition:opacity 1.5s ease-in-out;background:radial-gradient(ellipse 80% 70% at 50% 40%,rgba(205,236,255,.5),rgba(150,208,250,.34) 60%,rgba(120,190,245,.28))}
+html.introout #intro::before{opacity:0}
 html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
 @media (prefers-reduced-motion:reduce){#intro{display:none}}
 </style>
