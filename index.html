@@ -179,7 +179,7 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
 #intro{position:fixed;inset:0;z-index:200;overflow:hidden;pointer-events:none}
 /* 背景只用模糊（固定強度）：直接模糊頁面本身，比 backdrop-filter 輕很多，動畫才不會卡；泡泡散去後 0.25 秒還原 */
 html.introing body>*:not(#intro){filter:blur(16px)}
-html.introout body>*:not(#intro){transition:filter .25s ease-out}
+html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
 @media (prefers-reduced-motion:reduce){#intro{display:none}}
 </style>
 </head>
@@ -209,50 +209,79 @@ html.introout body>*:not(#intro){transition:filter .25s ease-out}
  var eAppear=bez(.2,1.4,.4,1),eFall=bez(.55,0,.9,.55),eOut=bez(0,0,.58,1);
 
  /* ---------- 泡泡「貼圖」：每種只畫一次，之後每幀只是 drawImage（不再逐顆重畫路徑）---------- */
- var V=3;
+ var V=6;
  function crescent(c,x,y,R,a0,a1,depth,alpha){
   var xa=x+Math.cos(a0)*R,ya=y+Math.sin(a0)*R,am=(a0+a1)/2;
   c.globalAlpha=alpha;c.beginPath();c.moveTo(xa,ya);c.arc(x,y,R,a0,a1);
   c.quadraticCurveTo(x+Math.cos(am)*(R-depth*2),y+Math.sin(am)*(R-depth*2),xa,ya);c.fill();
  }
- function bubble(c,x,y,r,hl){
-  c.fillStyle='#fff';c.strokeStyle='#fff';c.lineCap='round';
-  c.beginPath();c.arc(x,y,r,0,6.2832);
-  c.globalAlpha=.17;c.fill();
-  c.globalAlpha=.8;c.lineWidth=Math.max(.8,r*.03+.6);c.stroke();
-  crescent(c,x,y,r*.8,hl-.75,hl+.75,r*.17,.92);
-  c.globalAlpha=.85;c.beginPath();c.arc(x+Math.cos(hl+1.2)*r*.78,y+Math.sin(hl+1.2)*r*.78,Math.max(.7,r*.055),0,6.2832);c.fill();
-  crescent(c,x,y,r*.82,.3,1.0,r*.07,.45);
+ /* 泡泡外形：每顆貼圖各自隨機的不規則圓（有點扁、輪廓微微起伏）*/
+ function shape(){
+  return{p2:Math.random()*6.28,p3:Math.random()*6.28,p4:Math.random()*6.28,
+   a2:.03+Math.random()*.035,a3:.02+Math.random()*.03,a4:.008+Math.random()*.018,
+   sy:.84+Math.random()*.16,rot:(Math.random()-.5)*.8,hw:.9+Math.random()*.3}
+ }
+ function bubble(c,x,y,r,hl,sh){
+  var N=56,i,th,rd,px,py,cr=Math.cos(sh.rot),sr=Math.sin(sh.rot),bx,by,g;
+  c.fillStyle='#fff';c.strokeStyle='#fff';c.lineCap='round';c.lineJoin='round';
+  /* 外輪廓（不規則）*/
+  c.beginPath();
+  for(i=0;i<=N;i++){
+   th=i/N*6.2832;
+   rd=r*(1+sh.a2*Math.cos(2*th+sh.p2)+sh.a3*Math.cos(3*th+sh.p3)+sh.a4*Math.cos(4*th+sh.p4));
+   px=rd*Math.cos(th);py=rd*Math.sin(th)*sh.sy;
+   bx=x+px*cr-py*sr;by=y+px*sr+py*cr;
+   if(i)c.lineTo(bx,by);else c.moveTo(bx,by);
+  }
+  c.closePath();
+  c.globalAlpha=.07;c.fill();
+  c.globalAlpha=.88;c.lineWidth=Math.max(.9,r*.035+.5);c.stroke();
+  /* 右下：模糊的柔光（跟左上實心反白相對）*/
+  var ha=hl+Math.PI,gx=x+Math.cos(ha)*r*.38,gy=y+Math.sin(ha)*r*.38;
+  c.save();c.translate(gx,gy);c.rotate(ha+Math.PI/2);c.scale(1,.6);
+  g=c.createRadialGradient(0,0,0,0,0,r*.72);
+  g.addColorStop(0,'rgba(255,255,255,.62)');g.addColorStop(.55,'rgba(255,255,255,.22)');g.addColorStop(1,'rgba(255,255,255,0)');
+  c.globalAlpha=1;c.fillStyle=g;c.beginPath();c.arc(0,0,r*.72,0,6.2832);c.fill();
+  c.restore();
+  /* 左上：實心的白色彎月形反白（上緣圓、下緣微凹）*/
+  var w=r*.42*sh.hw,h=r*.17,hx=x+Math.cos(hl)*r*.52,hy=y+Math.sin(hl)*r*.52;
+  c.save();c.translate(hx,hy);c.rotate(hl+Math.PI/2);
+  c.fillStyle='#fff';c.strokeStyle='#fff';c.lineWidth=Math.max(.6,h*.5);c.globalAlpha=.96;
+  c.beginPath();c.moveTo(-w,h*.15);
+  c.bezierCurveTo(-w*1.05,-h*1.15,w*1.05,-h*1.15,w,h*.1);
+  c.quadraticCurveTo(w*.1,h*.85,-w,h*.15);
+  c.closePath();c.fill();c.stroke();
+  c.restore();
   c.globalAlpha=1;
  }
  function sprite(hl,blur,R){
-  var pad=Math.ceil(R*.27+blur*2.2),ss=2*(R+pad),sc=document.createElement('canvas'),c;
+  var sh=shape(),pad=Math.ceil(R*.27+blur*2.2),ss=2*(R+pad),sc=document.createElement('canvas'),c;
   sc.width=sc.height=Math.ceil(ss*dpr);sc.R=R;sc.ss=ss;
   c=sc.getContext('2d');c.scale(dpr,dpr);
-  if(blur>0&&'filter' in c){c.filter='blur('+blur+'px)';bubble(c,ss/2,ss/2,R,hl);c.filter='none'}
+  if(blur>0&&'filter' in c){c.filter='blur('+blur+'px)';bubble(c,ss/2,ss/2,R,hl,sh);c.filter='none'}
   else if(blur>0){
    /* 不支援 canvas filter 的瀏覽器：縮小再放大當作模糊 */
    var k=Math.max(.14,1/(1+blur*.45)),t=document.createElement('canvas'),tc;
    t.width=t.height=Math.max(8,Math.round(sc.width*k));tc=t.getContext('2d');tc.scale(dpr*k,dpr*k);
-   bubble(tc,ss/2,ss/2,R,hl);
+   bubble(tc,ss/2,ss/2,R,hl,sh);
    c.setTransform(1,0,0,1,0,0);c.drawImage(t,0,0,sc.width,sc.height);
-  }else bubble(c,ss/2,ss/2,R,hl);
+  }else bubble(c,ss/2,ss/2,R,hl,sh);
   return sc;
  }
- function sprites(blur,R){var a=[],i;for(i=0;i<V;i++)a.push(sprite(-2.3+(Math.random()-.5)*.8,blur,R));return a}
+ function sprites(blur,R){var a=[],i;for(i=0;i<V;i++)a.push(sprite(-2.0+(Math.random()-.5)*.6,blur,R));return a}
  /* 貼圖有大小兩種，縮放比例不會太大，邊緣才不會有鋸齒（也不必開高品質縮放，那個很慢）*/
  var SP={back:sprites(.6,50),ms:sprites(0,50),ml:sprites(0,110),front:sprites(.7,110),sm:sprites(0,20)};
 
  /* ---------- 擺放：同一層彼此盡量不疊，疊的話只疊一點點 ---------- */
  var s=Math.max(.7,Math.min(1.3,W/1500)),bs=[],
-  Nm=Math.max(12,Math.min(48,Math.round(W*H/(38000*s*s)))),
+  Nm=Math.max(16,Math.min(64,Math.round(W*H/(27000*s*s)))),
   Nb=Math.round(Nm*.8),Nf=Math.max(2,Math.round(Nm*.18));
  function make(layer,n,gap,rmin,rvar,al,sway,ta,td0,tdr,d0,dr,pf){
   var set;
   var pool=[],k,j,tr,x,y,r,ok,q,dx,dy,m;
   for(k=0;k<n;k++){
-   for(tr=0;tr<30;tr++){
-    r=(rmin+Math.random()*rvar)*s;x=Math.random()*(W+40)-20;y=Math.random()*(H+40)-20;ok=true;
+   for(tr=0;tr<60;tr++){
+    r=(rmin+Math.random()*rvar)*s;x=Math.random()*(W+40)-20;y=(Math.random()+Math.random())/2*(H+40)-20;ok=true;
     for(j=0;j<pool.length;j++){q=pool[j];dx=x-q.x;dy=y-q.y;m=gap*(r+q.r);if(dx*dx+dy*dy<m*m){ok=false;break}}
     if(!ok)continue;
     pool.push({x:x,y:y,r:r});
@@ -271,17 +300,27 @@ html.introout body>*:not(#intro){transition:filter .25s ease-out}
 
  /* 小泡泡：填在大泡泡之間的空白處（避開已經擺好的泡泡，只允許輕微貼近）*/
  (function(){
-  var n=Math.round(Nm*1.3),k,tr,x,y,r,ok,j,q,dx,dy,m,placed=0;
+  var n=Math.round(Nm*1.7),k,tr,x,y,r,ok,j,q,dx,dy,m,placed=0;
   for(k=0;k<n;k++){
-   for(tr=0;tr<40;tr++){
-    r=(7+Math.random()*13)*s;x=Math.random()*(W+20)-10;y=Math.random()*(H+20)-10;ok=true;
-    for(j=0;j<bs.length;j++){q=bs[j];dx=x-q.x;dy=y-q.y;m=.95*(r+q.r);if(dx*dx+dy*dy<m*m){ok=false;break}}
+   for(tr=0;tr<60;tr++){
+    r=(7+Math.random()*13)*s;x=Math.random()*(W+20)-10;y=(Math.random()+Math.random())/2*(H+20)-10;ok=true;
+    for(j=0;j<bs.length;j++){q=bs[j];dx=x-q.x;dy=y-q.y;m=.9*(r+q.r);if(dx*dx+dy*dy<m*m){ok=false;break}}
     if(!ok)continue;
     bs.push({x:x,y:y,r:r,spr:SP.sm[(Math.random()*V)|0],al:.85,A:2.5*s,
      ta:.3+Math.random()*.6,td:.9+Math.random()*1.0,dur:.9+Math.random()*.4,
      fall:Math.random()<.55,dx:(Math.random()-.5)*40,w:1.2+Math.random()*1.4,ph:Math.random()*6.28});
     placed++;break;
    }
+  }
+ })();
+
+ /* 疏 → 密 → 疏：出現時間用鐘形分布（兩頭少、中間多），停留一小段後離開 */
+ (function(){
+  var i,b,bell;
+  for(i=0;i<bs.length;i++){
+   b=bs[i];bell=(Math.random()+Math.random()+Math.random())/3;
+   b.ta=1.1*bell;
+   b.td=b.ta+.25+Math.random()*.35;
   }
  })();
 
@@ -293,18 +332,18 @@ html.introout body>*:not(#intro){transition:filter .25s ease-out}
   if(last===null)last=now;
   /* 用「虛擬時間」：就算某一幀被頁面載入卡住，動畫也是接著播，不會一下跳掉 */
   t+=Math.min((now-last)/1000,.05);last=now;
-  if(!out&&t>=2.6){out=true;root.classList.add('introout');root.classList.remove('introing')}
+  if(!out&&t>=1.0){out=true;root.classList.add('introout');root.classList.remove('introing')}
   ctx.clearRect(0,0,W,H);
   for(var k=0;k<bs.length;k++){
    var b=bs[k];if(t<b.ta)continue;
-   var u=(t-b.ta)/.35,sc=u<1?eAppear(u):1,a=1,
+   var u=(t-b.ta)/.2,sc=u<1?eAppear(u):1,a=1,
     bx=b.x+Math.sin(t*b.w+b.ph)*b.A,by=b.y+Math.cos(t*b.w*.8+b.ph)*b.A*.6,x=bx,y=by;
    if(t>=b.td){
     if(b.fall){
-     /* 單一條連續加速曲線：一開始微微下沉、之後越掉越快，速度全程連續，不會有一頓一頓 */
+     /* 單一條連續加速曲線：一開始微微上浮、之後越飄越快（往上），速度全程連續，不會有一頓一頓 */
      var p=(t-b.td)/b.dur;if(p>=1)continue;
      var D=H+260,f=.1*p+.9*p*p,g=p*p*(3-2*p);
-     y=by+D*f;x=bx+b.dx*g;
+     y=by-D*f;x=bx+b.dx*g;
     }else{
      var q=(t-b.td)/.35;if(q>=1)continue;
      if(q<.55){var w=eOut(q/.55);sc*=1+.25*w;a=1-.2*w}
