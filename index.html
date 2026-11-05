@@ -111,7 +111,7 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
 #crop.on{display:flex}
 #crop .cbox{width:min(400px,100%);max-height:100%;overflow-y:auto;padding:20px 20px 18px;background:#3a2414;border:3px solid #1f1208;box-shadow:inset 0 0 0 1px rgba(255,225,170,.25);border-radius:6px;display:flex;flex-direction:column;gap:12px;align-items:center}
 #crop h4{margin:0;align-self:flex-start;font-size:20px;color:var(--gold);font-weight:500;letter-spacing:.1em}
-#cstage{position:relative;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;background:#e6e6e6;cursor:grab;flex:none}
+#cstage{position:relative;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;background:#548071;cursor:grab;flex:none}
 #cstage:active{cursor:grabbing}
 #cstage img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none}
 #crect{position:absolute;box-sizing:border-box;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none;
@@ -620,10 +620,25 @@ crop.addEventListener('pointerdown',e=>{if(e.target===crop)closeCrop()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&crop.classList.contains('on'))closeCrop()});
 $('cok').onclick=()=>{
  const s=cS;if(!s)return;
- const k=s.im.naturalWidth/s.dw,c=document.createElement('canvas');c.width=280;c.height=325;
- const g=c.getContext('2d');g.fillStyle='#e6e6e6';g.fillRect(0,0,280,325);
- g.drawImage(s.im,s.x*k,s.y*k,s.w*k,(s.w/AR)*k,0,0,280,325);
- const u=c.toDataURL('image/jpeg',.78),cb=s.cb;closeCrop();cb(u)};
+ const k=s.im.naturalWidth/s.dw,sw=s.w*k,sh=(s.w/AR)*k;
+ function render(W,H,bg){
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  if(bg){g.fillStyle=bg;g.fillRect(0,0,W,H)}
+  g.drawImage(s.im,s.x*k,s.y*k,sw,sh,0,0,W,H);return c}
+ /* 先不填底色畫一次，看裁切範圍內有沒有透明像素（PNG／去背圖） */
+ let c=render(280,325,null),d=c.getContext('2d').getImageData(0,0,280,325).data,hasAlpha=false,u;
+ for(let i=3;i<d.length;i+=4){if(d[i]<250){hasAlpha=true;break}}
+ if(hasAlpha){
+  /* 有透明：保留透明度，透明處墊 10% 黑的半透明底，相框裡的底色會透出來 */
+  let W=280,H=325;
+  for(let n=0;n<3;n++){
+   c=render(W,H,'rgba(0,0,0,.1)');
+   u=c.toDataURL('image/webp',.82);
+   if(u.indexOf('data:image/webp')!==0)u=c.toDataURL('image/png');
+   if(u.length<140000)break;
+   W=Math.round(W*.75);H=Math.round(H*.75)}
+ }else u=c.toDataURL('image/jpeg',.78);
+ const cb=s.cb;closeCrop();cb(u)};
 file.onchange=()=>{
  const f=file.files[0];file.value='';if(!f)return;
  toAvatar(f,u=>{avatar=u;prev.style.backgroundImage='url('+u+')';prev.textContent='';$('fname').textContent=f.name})};
