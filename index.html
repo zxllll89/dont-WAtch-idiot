@@ -186,23 +186,24 @@ h1 #cnt{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);line-height:
  #panel{--ph:clamp(76px,calc((100vw - 154px)/2.2335),130px);--iw:calc(var(--ph)*1.3585)}
  #panel.in{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:12px;align-content:start;padding-top:46px}
  #panel.in #reg{display:contents}
- #panel.in #lg{grid-column:2;grid-row:2;width:var(--iw);height:var(--ph);margin:0;align-self:start;justify-self:end}
+ #panel.in #lg{grid-column:2;grid-row:2;width:var(--iw);height:var(--ph);margin:0;align-self:start;justify-self:end;transform:scale(1.05);transform-origin:100% 50%}
+ #panel.in #lg:hover,#panel.in #lg:focus-visible{transform:scale(1.05)}
  #panel.in #lg img{width:100%;height:100%;object-fit:contain}
  #panel.in #reg>h2{grid-column:1 / -1;grid-row:1;height:28px;margin:0;line-height:28px;font-size:clamp(17px,5vw,22px);letter-spacing:.1em;white-space:nowrap}
  #panel.in #reg>.row{grid-column:1;grid-row:2;gap:12px;height:var(--ph);min-width:0}
  #panel.in #pick,#panel.in #delpic{white-space:nowrap;padding:0 6px;font-size:13px}
- /* 手機寬度：按鈕矮一點；按鈕之間（直）和跟預覽框之間（橫）的間距一樣，都是 14px；靠上對齊預覽框 */
+ /* 手機寬度：按鈕固定窄一點、貼近左邊的預覽框（橫、直間距一樣，都是 10px）、靠上對齊；章魚哥固定在最右邊 */
  @media (max-width:640px){
-  #panel.in #reg>.row{gap:14px}
-  #panel.in .pbtns{gap:14px;align-self:flex-start;justify-content:flex-start}
-  #panel.in .pbtns .btn{flex:none;height:clamp(30px,calc((var(--ph) - 14px)/2 - 5px),42px)}
+  #panel.in #reg>.row{gap:10px}
+  #panel.in .pbtns{flex:0 1 clamp(72px,21vw,96px);min-width:0;max-width:none;gap:10px;align-self:flex-start;justify-content:flex-start}
+  #panel.in .pbtns .btn{flex:none;height:36px}
  }
  /* 平板寬度：預覽框（連同旁邊的章魚哥）大一點；按鈕靠上對齊預覽框（不拉滿）；兩顆之間（直）和跟預覽框之間（橫）的間距一樣，都是 14px */
  @media (min-width:641px){
   #panel{--ph:122px}
   #panel.in #reg>.row{gap:14px}
-  #panel.in .pbtns{max-width:132px;gap:14px;align-self:flex-start;justify-content:flex-start}
-  #panel.in .pbtns .btn{flex:none;height:46px}
+  #panel.in .pbtns{flex:none;width:108px;max-width:none;gap:14px;align-self:flex-start;justify-content:flex-start}
+  #panel.in .pbtns .btn{flex:none;height:36px}
   #panel.in #pick,#panel.in #delpic{font-size:15px;padding:0 8px}
  }
  #panel.in #prev{width:calc(var(--ph)*.875);height:var(--ph);font-size:12px}
