@@ -252,7 +252,7 @@ html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
   91%{transform:translateY(-1.5px) rotate(.7deg);animation-timing-function:ease-in-out}
   100%{transform:translateY(0) rotate(0)}
  }
- #tank{display:block;--tw:min(74.7vh,46vw);position:fixed;z-index:35;left:50%;top:min(calc(74vh - var(--tw)*1.9208),-14vh);width:var(--tw);aspect-ratio:857/1770;pointer-events:none;
+ #tank{display:block;--tw:min(74.7vh,46vw);position:fixed;z-index:35;left:50%;top:min(calc(74vh - var(--tw)*1.9208),-14vh);top:min(calc(74vh - var(--tw)*1.9208),calc(100vh - min(12vh,100px) - 22px - var(--tw)*2.0993),-14vh);top:min(calc(74vh - var(--tw)*1.9208),calc(100dvh - min(12vh,100px) - 22px - var(--tw)*2.0993),-14vh);width:var(--tw);aspect-ratio:857/1770;pointer-events:none;
   transform:translate(-48.39%,calc(-100% - 6vh));visibility:hidden;transition:transform .95s cubic-bezier(.2,.9,.3,1.12),visibility 0s linear .95s;will-change:transform}
  #tank.on{transform:translate(-48.39%,0);visibility:visible;transition:transform .95s cubic-bezier(.2,.9,.3,1.12),visibility 0s}
  /* 魚缸圖範圍內（含水管、框、窗口）都擋住滑鼠，底層的相框不會被點到或 hover */
