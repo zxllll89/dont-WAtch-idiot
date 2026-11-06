@@ -472,6 +472,16 @@ html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
   if(!out&&t>=1.0){out=true;root.classList.add('introout');root.classList.remove('introing')}
    /* 背景模糊淡出要 1.5 秒，畫面完全變清楚（t≥2.5）才讓拉環掉下來 */
    if(out&&!rung&&t>=2.5){rung=true;introDone()}
+  /* 加到主畫面（standalone）打開時，開頭讀到的視窗尺寸可能跟實際不同，畫布被 CSS 拉伸就會變扁；每一幀對齊實際大小，並依比例移動泡泡 */
+  (function(){
+   var w=box.clientWidth||innerWidth,h=box.clientHeight||innerHeight;
+   if(!w||!h||(Math.abs(w-W)<2&&Math.abs(h-H)<2))return;
+   var kx=w/W,ky=h/H,i;
+   W=w;H=h;dpr=Math.max(1,Math.min(window.devicePixelRatio||1,2,Math.sqrt(2.5e6/(W*H))));
+   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+   ctx.setTransform(dpr,0,0,dpr,0,0);
+   for(i=0;i<bs.length;i++){bs[i].x*=kx;bs[i].y*=ky}
+  })();
   ctx.clearRect(0,0,W,H);
   for(var k=0;k<bs.length;k++){
    var b=bs[k];if(t<b.ta)continue;
