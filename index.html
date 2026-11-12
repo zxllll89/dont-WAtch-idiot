@@ -233,6 +233,9 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  #panel.in #reg>:not(.rh):not(.row){grid-column:1 / -1}
  #panel.in #reg>.rh{display:contents}
  #panel.in .rh>.tip{grid-column:1 / -1;grid-row:1;justify-self:end;align-self:center;z-index:2}
+ /* 手機：提示圖示比標題字再小一點點，不用跟右上角的叉叉一樣大 */
+ #panel .tip{width:calc(clamp(17px,5vw,22px) - 2px);height:calc(clamp(17px,5vw,22px) - 2px)}
+ #card .tip{width:24px;height:24px}
 }
 @media (max-width:640px){
  h1 .ttl{font-size:calc(var(--logo)*.7)}
@@ -966,7 +969,7 @@ function placeFmt(){
  const cx=same?(p1.x+p2.x)/2:(p1.x+er.right-12)/2;
  let left=Math.max(vl+8,Math.min(vl+vw-w-8,cx-w/2));
  /* 電腦、手機、平板一律放在選取文字（第一行）的正上方；上面沒空間才放到選取處下面 */
- const gap=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)?10:6; /* 觸控裝置（手機、平板）10px，滑鼠 6px */
+ const gap=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)?16:6; /* 觸控裝置（手機、平板）16px，滑鼠 6px */
  const above=Math.max(er.top,p1.y)-h-gap,below=Math.min(er.bottom,p2.y+p2.lh)+gap;
  let top=above>=vt+8?above:below;
  top=Math.max(vt+8,Math.min(vt+vh-h-8,top));
