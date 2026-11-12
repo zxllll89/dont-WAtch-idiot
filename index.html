@@ -232,11 +232,9 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  #panel.in #prev{width:calc(var(--ph)*.875);height:var(--ph);font-size:12px}
  #panel.in #fname{margin-top:-4px}
  #panel.in #reg>:not(.rh):not(.row){grid-column:1 / -1}
- /* 手機／平板：標題和「叉叉」同一行（標題中心對齊叉叉），提示圖示緊接在標題右邊、中間空一格，不靠右 */
+ /* 手機／平板的登入框：標題和「叉叉」同一行（標題中心對齊叉叉），提示圖示緊接在標題右邊、中間空一格，不靠右（資訊框沒有叉叉，維持靠右） */
  #panel.in #reg>.rh{grid-column:1 / -1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:clamp(15px,4.5vw,20px);min-width:0;padding-right:48px}
- #card .mh{justify-content:flex-start;gap:clamp(18px,3vw,28px)}
- #card .mh h3{flex:0 1 auto}
- #card .mh #ename{flex:1}
+
  /* 手機：提示圖示比標題字再小一點點，不用跟右上角的叉叉一樣大 */
  #panel .tip{width:calc(clamp(17px,5vw,22px) - 2px);height:calc(clamp(17px,5vw,22px) - 2px)}
  #card .tip{width:24px;height:24px}
