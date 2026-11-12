@@ -137,6 +137,20 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
 #crop .btn{font-size:16px;padding:10px 22px}
 #cok{background:var(--gold);color:#1a1608;font-weight:700}
 
+/* 語法提示：圖示按鈕＋置中提示框 */
+.tip{flex:none;width:26px;height:26px;padding:0;border:0;border-radius:50%;background:none;color:var(--gold);cursor:pointer;display:block;-webkit-tap-highlight-color:transparent}
+.tip svg{display:block;width:100%;height:100%}
+.tip:hover{filter:brightness(1.15)}
+.tip:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.rh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
+#card .mh h3,#card .mh #ename{flex:1;min-width:0;margin:0}
+#tips{position:fixed;z-index:90;left:50%;top:50%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);padding:18px 24px 16px;background:#2c1a0e;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.6);color:var(--ink)}
+#tips[hidden]{display:none}
+#tips .th{margin:0 0 10px;font-size:17px;color:var(--gold);letter-spacing:.1em}
+#tips ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;font-size:16px;line-height:1.6}
+#tips code{font:inherit;font-size:15px;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.1);border-radius:4px;padding:1px 7px;white-space:nowrap}
+
 /* 點開相框的說明框 */
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:40;padding:14px}
 #modal.on{display:flex}
@@ -192,7 +206,7 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  #panel.in #lg{grid-column:2;grid-row:2;width:var(--iw);height:var(--ph);margin:0;align-self:start;justify-self:end;transform:scale(1.05);transform-origin:100% 50%}
  #panel.in #lg:hover,#panel.in #lg:focus-visible{transform:scale(1.05)}
  #panel.in #lg img{width:100%;height:100%;object-fit:contain}
- #panel.in #reg>h2{grid-column:1 / -1;grid-row:1;height:28px;margin:0;line-height:28px;font-size:clamp(17px,5vw,22px);letter-spacing:.1em;white-space:nowrap}
+ #panel.in .rh>h2{grid-column:1 / -1;grid-row:1;height:28px;margin:0;line-height:28px;font-size:clamp(17px,5vw,22px);letter-spacing:.1em;white-space:nowrap}
  #panel.in #reg>.row{grid-column:1;grid-row:2;gap:12px;height:var(--ph);min-width:0}
  #panel.in #pick,#panel.in #delpic{white-space:nowrap;padding:0 6px;font-size:13px}
  /* 手機寬度：按鈕固定窄一點、貼近左邊的預覽框（橫、直間距一樣，都是 10px）、靠上對齊；章魚哥固定在最右邊 */
@@ -211,7 +225,9 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  }
  #panel.in #prev{width:calc(var(--ph)*.875);height:var(--ph);font-size:12px}
  #panel.in #fname{margin-top:-4px}
- #panel.in #reg>:not(h2):not(.row){grid-column:1 / -1}
+ #panel.in #reg>:not(.rh):not(.row){grid-column:1 / -1}
+ #panel.in #reg>.rh{display:contents}
+ #panel.in .rh>.tip{grid-column:1 / -1;grid-row:1;justify-self:end;align-self:center;z-index:2}
 }
 @media (max-width:640px){
  h1 .ttl{font-size:calc(var(--logo)*.7)}
@@ -529,7 +545,7 @@ html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
    <button type="button" class="btn" id="pwok">確認</button>
   </div>
   <div id="reg" class="card" hidden>
-   <h2>登錄最佳員工</h2>
+   <div class="rh"><h2>登錄最佳員工</h2><button type="button" class="tip" aria-label="語法提示" title="語法提示"><svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M256 0a256 256 0 1 0 0 512a256 256 0 1 0 0-512ZM278 90a40 40 0 1 1 0 80a40 40 0 1 1 0-80ZM178 236C196 226 228 205 266 205L296 208C296 300 280 335 274 368C271 384 290 388 316 378C302 404 262 416 232 413C204 410 196 392 203 362C212 322 233 282 238 256C241 242 214 240 178 236Z"/></svg></button></div>
   <div class="row">
    <div id="prev">點擊上傳照片<br>（選填）</div>
    <div class="pbtns"><button type="button" class="btn" id="pick">選擇圖片</button><button type="button" class="btn" id="delpic" disabled>刪除圖片</button></div>
@@ -579,10 +595,20 @@ html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
  <p class="chint">拖曳移動範圍・滑桿、滾輪或雙指調整大小</p>
  <div class="cact"><button type="button" class="btn" id="ccancel">取消</button><button type="button" class="btn" id="cok">確定</button></div>
 </div></div>
+<div id="tips" role="dialog" aria-label="語法提示" hidden>
+ <div class="th">語法提示</div>
+ <ul>
+  <li><em>斜體</em>：<code>*文字*</code> 或 <code>_文字_</code></li>
+  <li><strong>粗體</strong>：<code>**文字**</code></li>
+  <li><strong><em>粗斜體</em></strong>：<code>***文字***</code></li>
+  <li><u>底線</u>：<code>__文字__</code></li>
+  <li><s>刪除線</s>：<code>~~文字~~</code></li>
+ </ul>
+</div>
 <div id="modal"><div id="card">
  <div class="big"><img id="mimg" alt=""></div>
- <div class="info"><h3 id="mname"></h3><p id="mdeeds"></p>
-  <input type="text" id="ename" maxlength="20" hidden><textarea id="edeeds" maxlength="200" hidden></textarea><input type="file" id="efile" accept="image/*" hidden>
+ <div class="info"><div class="mh"><h3 id="mname"></h3><input type="text" id="ename" maxlength="20" hidden><button type="button" class="tip" aria-label="語法提示" title="語法提示"><svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M256 0a256 256 0 1 0 0 512a256 256 0 1 0 0-512ZM278 90a40 40 0 1 1 0 80a40 40 0 1 1 0-80ZM178 236C196 226 228 205 266 205L296 208C296 300 280 335 274 368C271 384 290 388 316 378C302 404 262 416 232 413C204 410 196 392 203 362C212 322 233 282 238 256C241 242 214 240 178 236Z"/></svg></button></div><p id="mdeeds"></p>
+  <textarea id="edeeds" maxlength="200" hidden></textarea><input type="file" id="efile" accept="image/*" hidden>
   <div class="acts"><button class="btn" id="medit">編輯</button><button class="btn" id="mpic" hidden>更換照片</button><button class="btn" id="mpicdel" hidden>刪除照片</button><button class="btn" id="msave" hidden>儲存</button><button class="btn" id="mcancel" hidden>取消</button><button class="btn" id="mdel">刪除</button></div>
   <div id="cm">
    <h4 id="chead">留言</h4>
@@ -640,7 +666,7 @@ function render(){
   if(!fresh.has(m.id))f.style.animation='none';
   const p=document.createElement('div');p.className='pic';
   const i=document.createElement('img');i.src=m.img||DEF;i.alt='';i.draggable=false;
-  const n=document.createElement('div');n.className='nm';const ns=document.createElement('span');ns.textContent=m.name;n.append(ns);
+  const n=document.createElement('div');n.className='nm';const ns=document.createElement('span');mdRender(ns,m.name);n.append(ns);
   p.append(i);f.append(p,n);f.onclick=()=>{if(suppressClick)return;openCard(m)};wall.append(f);
   if(m.id===lastMine)target=f});
  empty.style.display=members.length?'none':'block';
@@ -852,10 +878,62 @@ $('submit').onclick=()=>{
  panel.classList.remove('open');
 };
 
+/* ---------- 文字語法：*斜體* _斜體_ **粗體** ***粗斜體*** __底線__ ~~刪除線~~（只轉成元素，不用 innerHTML，所以不會有 XSS）---------- */
+function mdNodes(text){
+ const MD_RULES=[['***',['strong','em']],['**',['strong']],['__',['u']],['~~',['s']],['*',['em']],['_',['em']]];
+ const out=[],n=text.length;let buf='',i=0;
+ const flush=()=>{if(buf){out.push(document.createTextNode(buf));buf=''}};
+ const alnum=c=>!!c&&/[A-Za-z0-9]/.test(c);
+ while(i<n){
+  const ch=text[i];let hit=false;
+  if(ch==='*'||ch==='_'||ch==='~'){
+   for(const [d,tags] of MD_RULES){
+    if(!text.startsWith(d,i))continue;
+    const s=i+d.length,us=d[0]==='_';
+    if(us&&alnum(text[i-1]))continue; /* snake_case 之類的底線不當語法 */
+    let j=s-1,found=-1;
+    while((j=text.indexOf(d,j+1))!==-1){
+     const inner=text.slice(s,j),e=j+d.length;
+     if(!inner||/\n/.test(inner)||/^\s/.test(inner)||/\s$/.test(inner))continue;
+     if(d.length===1&&(inner[0]===d||text[j-1]===d||text[e]===d))continue; /* 單個 * _ 不要吃到 ** __ */
+     if(us&&alnum(text[e]))continue;
+     found=j;break;
+    }
+    if(found<0)continue;
+    flush();
+    let node=null;
+    for(let k=tags.length-1;k>=0;k--){const el=document.createElement(tags[k]);if(node)el.append(node);else el.append(...mdNodes(text.slice(s,found)));node=el}
+    out.push(node);i=found+d.length;hit=true;break;
+   }
+  }
+  if(!hit){buf+=ch;i++}
+ }
+ flush();return out;
+}
+function mdRender(el,text){el.textContent='';el.append(...mdNodes(String(text==null?'':text)))}
+
+/* ---------- 語法提示框：點圖示在登入框／資訊框中間顯示 ---------- */
+const tipsEl=$('tips');let tipFor=null;
+function placeTips(){
+ if(!tipFor)return;
+ const r=tipFor.getBoundingClientRect(),l=Math.max(r.left,0),rt=Math.min(r.right,innerWidth),t=Math.max(r.top,0),b=Math.min(r.bottom,innerHeight);
+ tipsEl.style.maxWidth=Math.max(200,rt-l-24)+'px';
+ tipsEl.style.left=(l+rt)/2+'px';tipsEl.style.top=(t+b)/2+'px';
+}
+function hideTips(){tipFor=null;tipsEl.hidden=true}
+document.querySelectorAll('.tip').forEach(b=>b.addEventListener('click',e=>{
+ e.stopPropagation();const box=b.closest('#card,#panel');
+ if(!tipsEl.hidden&&tipFor===box){hideTips();return}
+ tipFor=box;tipsEl.hidden=false;placeTips();
+}));
+document.addEventListener('pointerdown',e=>{if(tipsEl.hidden)return;if(tipsEl.contains(e.target)||e.target.closest('.tip'))return;hideTips()});
+addEventListener('keydown',e=>{if(e.key==='Escape')hideTips()});
+addEventListener('resize',placeTips);
+
 /* ---------- 說明框：檢視／編輯／刪除 ---------- */
 const modal=$('modal');let cur=null;
 function openCard(m){cur=m;resetDel();setEdit(false);$('mimg').src=m.img||DEF;
- $('mname').textContent=m.name;$('mdeeds').textContent=m.deeds;modal.classList.add('on');watchComments(m)}
+ mdRender($('mname'),m.name);mdRender($('mdeeds'),m.deeds);modal.classList.add('on');watchComments(m)}
 function closeCard(){modal.classList.remove('on');unwatchComments()}
 $('mclose').onclick=closeCard;
 modal.onclick=e=>{if(e.target===modal)closeCard()};
@@ -1015,7 +1093,7 @@ function drawComments(list){
  list.forEach(c=>{
   const w=document.createElement('div');w.className='cmt';
   const h=document.createElement('div');h.className='h';
-  const l=document.createElement('span');const b=document.createElement('b');b.textContent=c.name||'訪客';
+  const l=document.createElement('span');const b=document.createElement('b');mdRender(b,c.name||'訪客');
   l.append(b,' ・ '+fmtTime(c.ts));
   const del=document.createElement('button');del.type='button';del.className='d';del.textContent='刪除';
   let t=null;
@@ -1023,7 +1101,7 @@ function drawComments(list){
    if(!del.classList.contains('sure')){del.classList.add('sure');del.textContent='確定刪除？';t=setTimeout(()=>{del.classList.remove('sure');del.textContent='刪除'},3000);return}
    clearTimeout(t);removeComment(c)};
   if(authed)h.append(l,del);else h.append(l);
-  const tx=document.createElement('div');tx.className='t';tx.textContent=c.text;
+  const tx=document.createElement('div');tx.className='t';mdRender(tx,c.text);
   w.append(h,tx);box.append(w)});
  box.scrollTop=box.scrollHeight;
 }
