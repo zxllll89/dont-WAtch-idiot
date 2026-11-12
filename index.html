@@ -964,16 +964,29 @@ function placeFmt(){
  const a=el.selectionStart,b=el.selectionEnd;if(a===b||!el.value.slice(a,b).trim()){hideFmt();return}
  const er=el.getBoundingClientRect(),p1=caretPos(el,a),p2=caretPos(el,b);
  fmtbar.hidden=false;
- const vv=window.visualViewport,vl=vv?vv.offsetLeft:0,vt=vv?vv.offsetTop:0,vw=vv?vv.width:innerWidth,vh=vv?vv.height:innerHeight;
+ const vv=window.visualViewport,vw=vv?vv.width:innerWidth;
  const w=fmtbar.offsetWidth,h=fmtbar.offsetHeight,same=Math.abs(p1.y-p2.y)<2;
  const cx=same?(p1.x+p2.x)/2:(p1.x+er.right-12)/2;
- let left=Math.max(vl+8,Math.min(vl+vw-w-8,cx-w/2));
- /* 電腦、手機、平板一律放在選取文字（第一行）的正上方；上面沒空間才放到選取處下面 */
  const gap=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)?16:6; /* 觸控裝置（手機、平板）16px，滑鼠 6px */
+ /* 電腦、手機、平板一律放在選取文字（第一行）的正上方；上面沒空間才放到選取處下面 */
  const above=Math.max(er.top,p1.y)-h-gap,below=Math.min(er.bottom,p2.y+p2.lh)+gap;
- let top=above>=vt+8?above:below;
- top=Math.max(vt+8,Math.min(vt+vh-h-8,top));
+ let top=Math.max(8,above>=8?above:below),left=Math.max(8,Math.min(vw-w-8,cx-w/2));
  fmtbar.style.left=left+'px';fmtbar.style.top=top+'px';
+ /* iOS 開著鍵盤時，fixed 的座標系和 getBoundingClientRect 的座標系會差一個「畫面被鍵盤推動的量」，頁面一捲動就跑掉。
+    所以放好之後量一次工具列「實際」出現的位置，把誤差補回去，永遠跟輸入框用同一套座標 */
+ const rr=fmtbar.getBoundingClientRect(),dx=left-rr.left,dy=top-rr.top;
+ if(Math.abs(dx)>.5||Math.abs(dy)>.5){fmtbar.style.left=(left+dx)+'px';fmtbar.style.top=(top+dy)+'px'}
+ fmtLoopStart();
+}
+/* 工具列顯示期間每一幀看一下輸入框／選取有沒有移動（手機捲動時 scroll 事件不一定即時），有動就重新對位 */
+let fmtLoopOn=false,fmtLSig='';
+function fmtLoopStart(){if(fmtLoopOn)return;fmtLoopOn=true;requestAnimationFrame(fmtLoopTick)}
+function fmtLoopTick(){
+ if(!fmtEl||fmtbar.hidden){fmtLoopOn=false;return}
+ const er=fmtEl.getBoundingClientRect(),vv=window.visualViewport;
+ const sig=[er.top,er.left,er.width,fmtEl.selectionStart,fmtEl.selectionEnd,fmtEl.scrollTop,vv?vv.offsetTop+'/'+vv.offsetLeft+'/'+vv.scale:''].join();
+ if(sig!==fmtLSig){fmtLSig=sig;placeFmt()}
+ requestAnimationFrame(fmtLoopTick);
 }
 function schedFmt(){cancelAnimationFrame(fmtRaf);fmtRaf=requestAnimationFrame(()=>{const el=document.activeElement;if(fmtOK(el)){fmtEl=el;placeFmt()}else hideFmt()})}
 ['selectionchange','keyup','mouseup','touchend','input','select'].forEach(ev=>document.addEventListener(ev,schedFmt,true));
