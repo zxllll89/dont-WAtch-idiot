@@ -145,6 +145,7 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
 .rh{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
 #card .mh h3,#card .mh #ename{flex:1;min-width:0;margin:0}
+@media (min-width:901px){#panel .tip{width:20px;height:20px}}
 #tips{position:fixed;z-index:90;left:50%;top:50%;transform:translate(-50%,-50%);width:max-content;max-width:calc(100vw - 32px);padding:18px 24px 16px;background:#3a2414;border:3px solid #1f1208;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(255,225,170,.25),0 12px 40px rgba(0,0,0,.6);color:var(--ink)}
 #tips[hidden]{display:none}
 #tips .th{margin:0 0 10px;font-size:17px;color:var(--gold);letter-spacing:.1em}
@@ -206,7 +207,7 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  h1 #cnt{position:absolute;left:16px;right:16px;top:calc(var(--hh) - 17px);margin:0;font-size:12px;filter:none;line-height:1.2}
  /* 登入後：章魚哥縮小靠右，和「標題＋上傳照片」同一橫排、等高 */
  #panel{--ph:clamp(76px,calc((100vw - 154px)/2.2335),130px);--iw:calc(var(--ph)*1.3585)}
- #panel.in{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:12px;align-content:start;padding-top:46px}
+ #panel.in{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:12px;align-content:start;padding-top:11px}
  #panel.in #reg{display:contents}
  #panel.in #lg{grid-column:2;grid-row:2;width:var(--iw);height:var(--ph);margin:0;align-self:start;justify-self:end;transform:scale(1.05);transform-origin:100% 50%}
  #panel.in #lg:hover,#panel.in #lg:focus-visible{transform:scale(1.05)}
@@ -231,8 +232,11 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  #panel.in #prev{width:calc(var(--ph)*.875);height:var(--ph);font-size:12px}
  #panel.in #fname{margin-top:-4px}
  #panel.in #reg>:not(.rh):not(.row){grid-column:1 / -1}
- #panel.in #reg>.rh{display:contents}
- #panel.in .rh>.tip{grid-column:1 / -1;grid-row:1;justify-self:end;align-self:center;z-index:2}
+ /* 手機／平板：標題和「叉叉」同一行（標題中心對齊叉叉），提示圖示緊接在標題右邊、中間空一格，不靠右 */
+ #panel.in #reg>.rh{grid-column:1 / -1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:clamp(15px,4.5vw,20px);min-width:0;padding-right:48px}
+ #card .mh{justify-content:flex-start;gap:clamp(18px,3vw,28px)}
+ #card .mh h3{flex:0 1 auto}
+ #card .mh #ename{flex:1}
  /* 手機：提示圖示比標題字再小一點點，不用跟右上角的叉叉一樣大 */
  #panel .tip{width:calc(clamp(17px,5vw,22px) - 2px);height:calc(clamp(17px,5vw,22px) - 2px)}
  #card .tip{width:24px;height:24px}
