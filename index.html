@@ -151,6 +151,11 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
 #tips ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;font-size:16px;line-height:1.6}
 #tips code{font:inherit;font-size:15px;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.1);border-radius:4px;padding:1px 7px;white-space:nowrap}
 
+/* 選取文字時出現的語法工具列 */
+#fmtbar{position:fixed;z-index:95;left:0;top:0;display:flex;gap:2px;padding:4px;background:#3a2414;border:3px solid #1f1208;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(255,225,170,.25),0 8px 24px rgba(0,0,0,.55);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#fmtbar[hidden]{display:none}
+#fmtbar button{background:none;border:0;border-radius:4px;color:var(--gold);font:inherit;font-size:15px;line-height:1;padding:8px 10px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+#fmtbar button:hover,#fmtbar button:active{background:rgba(255,210,63,.18)}
 /* 點開相框的說明框 */
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:40;padding:14px}
 #modal.on{display:flex}
@@ -605,6 +610,9 @@ html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
   <li><s>刪除線</s>：<code>~~文字~~</code></li>
  </ul>
 </div>
+<div id="fmtbar" role="toolbar" aria-label="文字語法" hidden>
+ <button type="button" data-d="*"><em>斜體</em></button><button type="button" data-d="**"><strong>粗體</strong></button><button type="button" data-d="***"><strong><em>粗斜體</em></strong></button><button type="button" data-d="__"><u>底線</u></button><button type="button" data-d="~~"><s>刪除線</s></button>
+</div>
 <div id="modal"><div id="card">
  <div class="big"><img id="mimg" alt=""></div>
  <div class="info"><div class="mh"><h3 id="mname"></h3><input type="text" id="ename" maxlength="20" hidden><button type="button" class="tip" aria-label="語法提示" title="語法提示"><svg viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M256 0a256 256 0 1 0 0 512a256 256 0 1 0 0-512ZM278 90a40 40 0 1 1 0 80a40 40 0 1 1 0-80ZM178 236C196 226 228 205 266 205L296 208C296 300 280 335 274 368C271 384 290 388 316 378C302 404 262 416 232 413C204 410 196 392 203 362C212 322 233 282 238 256C241 242 214 240 178 236Z"/></svg></button></div><p id="mdeeds"></p>
@@ -929,6 +937,72 @@ document.querySelectorAll('.tip').forEach(b=>b.addEventListener('click',e=>{
 document.addEventListener('pointerdown',e=>{if(tipsEl.hidden)return;if(tipsEl.contains(e.target)||e.target.closest('.tip'))return;hideTips()});
 addEventListener('keydown',e=>{if(e.key==='Escape')hideTips()});
 addEventListener('resize',placeTips);
+
+/* ---------- 選取文字 → 跳出語法工具列（點一下就加上／移除語法）---------- */
+const fmtbar=$('fmtbar');let fmtEl=null,fmtRaf=0;
+const fmtOK=el=>el&&el.matches&&el.matches('input[type=text],textarea')&&!el.hidden&&typeof el.selectionStart==='number';
+/* 輸入框拿不到游標座標，所以用一個隱形的鏡像元素排版後量出選取處的位置 */
+function caretPos(el,idx){
+ const cs=getComputedStyle(el),r=el.getBoundingClientRect(),ta=el.tagName==='TEXTAREA',m=document.createElement('div'),st=m.style;
+ ['fontFamily','fontSize','fontWeight','fontStyle','letterSpacing','textTransform','textIndent','wordSpacing','lineHeight','paddingTop','paddingRight','paddingBottom','paddingLeft','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','boxSizing','tabSize'].forEach(k=>st[k]=cs[k]);
+ st.borderStyle='solid';st.borderColor='transparent';st.position='fixed';st.visibility='hidden';st.left='-99999px';st.top='0';st.overflow='hidden';
+ if(ta){const sb=el.offsetWidth-el.clientWidth-parseFloat(cs.borderLeftWidth)-parseFloat(cs.borderRightWidth);st.width=(el.offsetWidth-sb)+'px';st.whiteSpace='pre-wrap';st.overflowWrap='break-word'}
+ else{st.whiteSpace='pre';st.width='max-content'}
+ const mk=document.createElement('span');mk.textContent='​';
+ m.append(document.createTextNode(el.value.slice(0,idx)),mk,document.createTextNode(el.value.slice(idx)));
+ document.body.append(m);
+ const lh=parseFloat(cs.lineHeight)||mk.offsetHeight||parseFloat(cs.fontSize)*1.3;
+ const x=r.left+parseFloat(cs.borderLeftWidth)+mk.offsetLeft-el.scrollLeft,y=r.top+parseFloat(cs.borderTopWidth)+mk.offsetTop-el.scrollTop;
+ m.remove();return{x,y,lh};
+}
+function hideFmt(){fmtEl=null;fmtbar.hidden=true}
+function placeFmt(){
+ const el=fmtEl;if(!fmtOK(el)){hideFmt();return}
+ const a=el.selectionStart,b=el.selectionEnd;if(a===b||!el.value.slice(a,b).trim()){hideFmt();return}
+ const er=el.getBoundingClientRect(),p1=caretPos(el,a),p2=caretPos(el,b);
+ fmtbar.hidden=false;
+ const w=fmtbar.offsetWidth,h=fmtbar.offsetHeight,same=Math.abs(p1.y-p2.y)<2;
+ const cx=same?(p1.x+p2.x)/2:(p1.x+er.right-12)/2;
+ let left=Math.max(8,Math.min(innerWidth-w-8,cx-w/2));
+ /* 螢幕在觸控裝置上，系統自己的「拷貝／剪下」選單會出現在選取處上方，所以工具列改放下面 */
+ const coarse=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+ let top=Math.max(er.top,p1.y)-h-8;
+ if(coarse||top<8)top=Math.min(er.bottom,p2.y+p2.lh)+8;
+ top=Math.max(8,Math.min(innerHeight-h-8,top));
+ fmtbar.style.left=left+'px';fmtbar.style.top=top+'px';
+}
+function schedFmt(){cancelAnimationFrame(fmtRaf);fmtRaf=requestAnimationFrame(()=>{const el=document.activeElement;if(fmtOK(el)){fmtEl=el;placeFmt()}else hideFmt()})}
+['selectionchange','keyup','mouseup','touchend','input','select'].forEach(ev=>document.addEventListener(ev,schedFmt,true));
+document.addEventListener('focusout',e=>{if(fmtbar.contains(e.relatedTarget))return;setTimeout(()=>{if(!fmtOK(document.activeElement))hideFmt()},0)});
+addEventListener('scroll',()=>{if(fmtEl)placeFmt()},true);
+addEventListener('resize',()=>{if(fmtEl)placeFmt()});
+/* 按工具列時不要讓輸入框失去焦點，不然選取會不見 */
+['pointerdown','mousedown','touchstart'].forEach(ev=>fmtbar.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+function fmtApply(d){
+ const el=fmtEl;if(!fmtOK(el))return;
+ const a=el.selectionStart,b=el.selectionEnd;if(a===b)return;
+ const v=el.value,sel=v.slice(a,b),c=d[0];
+ let from=a,to=b,rep,s0,s1;
+ if(c==='*'){
+  /* * ** *** 彼此疊在一起：數選取範圍外面連續的星號，算出要加／減幾顆 */
+  let lr=0,rr=0;while(lr<3&&v[a-1-lr]==='*')lr++;while(rr<3&&v[b+rr]==='*')rr++;
+  const n=Math.min(lr,rr);let nn;
+  if(d==='*')nn=(n===1||n===3)?n-1:n+1;else if(d==='**')nn=n>=2?n-2:n+2;else nn=n===3?0:3;
+  from=a-n;to=b+n;rep='*'.repeat(nn)+sel+'*'.repeat(nn);s0=from+nn;s1=s0+sel.length;
+ }else{
+  const L=d.length;
+  if(v.slice(a-L,a)===d&&v.slice(b,b+L)===d){from=a-L;to=b+L;rep=sel;s0=from;s1=from+sel.length}
+  else if(sel.length>2*L&&sel.startsWith(d)&&sel.endsWith(d)){rep=sel.slice(L,-L);s0=a;s1=a+rep.length}
+  else{rep=d+sel+d;s0=a+L;s1=s0+sel.length}
+ }
+ const nl=v.length-(to-from)+rep.length;
+ if(el.maxLength>0&&nl>el.maxLength&&rep.length>to-from){toast('字數已達上限，放不下語法符號');return}
+ el.setSelectionRange(from,to);
+ let ok=false;try{ok=document.execCommand('insertText',false,rep)}catch(e){}
+ if(!ok||el.value.length!==nl){el.setRangeText(rep,from,to,'end');el.dispatchEvent(new Event('input',{bubbles:true}))}
+ el.setSelectionRange(s0,s1);schedFmt();
+}
+fmtbar.addEventListener('click',e=>{const b=e.target.closest('button[data-d]');if(b)fmtApply(b.dataset.d)});
 
 /* ---------- 說明框：檢視／編輯／刪除 ---------- */
 const modal=$('modal');let cur=null;
