@@ -965,12 +965,9 @@ function placeFmt(){
  const w=fmtbar.offsetWidth,h=fmtbar.offsetHeight,same=Math.abs(p1.y-p2.y)<2;
  const cx=same?(p1.x+p2.x)/2:(p1.x+er.right-12)/2;
  let left=Math.max(vl+8,Math.min(vl+vw-w-8,cx-w/2));
- /* 觸控裝置：系統的「拷貝／剪下」選單在選取處上方、選取把手在下方，所以工具列放在把手更下面一點；下面放不下（被鍵盤擋住）才改放上面、多留空間給系統選單 */
- const coarse=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
- const above=Math.max(er.top,p1.y)-h-8,below=Math.min(er.bottom,p2.y+p2.lh)+(coarse?34:8);
- let top;
- if(coarse){top=below+h<=vt+vh-8?below:above-52}
- else{top=above>=vt+8?above:below}
+ /* 電腦、手機、平板一律放在選取文字（第一行）的正上方 6px；上面沒空間才放到選取處下面 */
+ const above=Math.max(er.top,p1.y)-h-6,below=Math.min(er.bottom,p2.y+p2.lh)+6;
+ let top=above>=vt+8?above:below;
  top=Math.max(vt+8,Math.min(vt+vh-h-8,top));
  fmtbar.style.left=left+'px';fmtbar.style.top=top+'px';
 }
