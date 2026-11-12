@@ -961,14 +961,17 @@ function placeFmt(){
  const a=el.selectionStart,b=el.selectionEnd;if(a===b||!el.value.slice(a,b).trim()){hideFmt();return}
  const er=el.getBoundingClientRect(),p1=caretPos(el,a),p2=caretPos(el,b);
  fmtbar.hidden=false;
+ const vv=window.visualViewport,vl=vv?vv.offsetLeft:0,vt=vv?vv.offsetTop:0,vw=vv?vv.width:innerWidth,vh=vv?vv.height:innerHeight;
  const w=fmtbar.offsetWidth,h=fmtbar.offsetHeight,same=Math.abs(p1.y-p2.y)<2;
  const cx=same?(p1.x+p2.x)/2:(p1.x+er.right-12)/2;
- let left=Math.max(8,Math.min(innerWidth-w-8,cx-w/2));
- /* 螢幕在觸控裝置上，系統自己的「拷貝／剪下」選單會出現在選取處上方，所以工具列改放下面 */
+ let left=Math.max(vl+8,Math.min(vl+vw-w-8,cx-w/2));
+ /* 觸控裝置：系統的「拷貝／剪下」選單在選取處上方、選取把手在下方，所以工具列放在把手更下面一點；下面放不下（被鍵盤擋住）才改放上面、多留空間給系統選單 */
  const coarse=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
- let top=Math.max(er.top,p1.y)-h-8;
- if(coarse||top<8)top=Math.min(er.bottom,p2.y+p2.lh)+8;
- top=Math.max(8,Math.min(innerHeight-h-8,top));
+ const above=Math.max(er.top,p1.y)-h-8,below=Math.min(er.bottom,p2.y+p2.lh)+(coarse?34:8);
+ let top;
+ if(coarse){top=below+h<=vt+vh-8?below:above-52}
+ else{top=above>=vt+8?above:below}
+ top=Math.max(vt+8,Math.min(vt+vh-h-8,top));
  fmtbar.style.left=left+'px';fmtbar.style.top=top+'px';
 }
 function schedFmt(){cancelAnimationFrame(fmtRaf);fmtRaf=requestAnimationFrame(()=>{const el=document.activeElement;if(fmtOK(el)){fmtEl=el;placeFmt()}else hideFmt()})}
@@ -976,8 +979,21 @@ function schedFmt(){cancelAnimationFrame(fmtRaf);fmtRaf=requestAnimationFrame(()
 document.addEventListener('focusout',e=>{if(fmtbar.contains(e.relatedTarget))return;setTimeout(()=>{if(!fmtOK(document.activeElement))hideFmt()},0)});
 addEventListener('scroll',()=>{if(fmtEl)placeFmt()},true);
 addEventListener('resize',()=>{if(fmtEl)placeFmt()});
+if(window.visualViewport){visualViewport.addEventListener('resize',()=>{if(fmtEl)placeFmt()});visualViewport.addEventListener('scroll',()=>{if(fmtEl)placeFmt()})}
+/* 有些手機瀏覽器（尤其 iOS）選取輸入框文字時不一定會送 selectionchange，所以輸入框有焦點時每 0.25 秒也檢查一次選取範圍 */
+let fmtPoll=0,fmtSig='';
+document.addEventListener('focusin',e=>{
+ if(!fmtOK(e.target))return;clearInterval(fmtPoll);
+ fmtPoll=setInterval(()=>{const el=document.activeElement;if(!fmtOK(el)){clearInterval(fmtPoll);return}
+  const sig=el.selectionStart+'-'+el.selectionEnd+'-'+el.value.length+'-'+el.scrollTop+'-'+el.scrollLeft;
+  if(sig!==fmtSig){fmtSig=sig;schedFmt()}},250)});
 /* 按工具列時不要讓輸入框失去焦點，不然選取會不見 */
-['pointerdown','mousedown','touchstart'].forEach(ev=>fmtbar.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+['pointerdown','mousedown'].forEach(ev=>fmtbar.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+/* 觸控：touchstart 擋掉預設行為（保留選取）之後瀏覽器就不會再送 click，所以要在 touchend 自己執行 */
+let fmtTouch=null;
+fmtbar.addEventListener('touchstart',e=>{e.preventDefault();fmtTouch=e.target.closest('button[data-d]')},{passive:false});
+fmtbar.addEventListener('touchend',e=>{e.preventDefault();const b=e.target.closest('button[data-d]');if(b&&b===fmtTouch)fmtApply(b.dataset.d);fmtTouch=null},{passive:false});
+fmtbar.addEventListener('touchcancel',()=>{fmtTouch=null});
 function fmtApply(d){
  const el=fmtEl;if(!fmtOK(el))return;
  const a=el.selectionStart,b=el.selectionEnd;if(a===b)return;
