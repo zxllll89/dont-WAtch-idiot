@@ -196,6 +196,7 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  #panel{position:fixed;left:0;right:0;bottom:0;width:auto;margin:0;max-height:90vh;max-height:90dvh;border-radius:16px 16px 0 0;border-bottom:0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));z-index:30;transform:translateY(110%);visibility:hidden;transition:transform .3s ease,visibility 0s linear .3s;background:rgba(52,33,18,.98)}
  #panel.open{transform:none;visibility:visible;transition-delay:0s}
  .x{display:block}
+ #panel.in .x{top:17px} /* 登入框標題上方多留 9px，叉叉跟著下移，還是和標題同一行 */
  #fab{display:block;position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:20;width:min(48vw,200px);padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none;transition:transform .18s}
  #fab img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none;filter:drop-shadow(0 6px 8px rgba(0,25,55,.45))}
  #fab:hover,#fab:focus-visible{transform:scale(1.05)}
@@ -207,7 +208,7 @@ h1 #cnt,#catch .ct{flex:0 1 auto;min-width:0;font-size:clamp(13px,1.15vw,19px);l
  h1 #cnt{position:absolute;left:16px;right:16px;top:calc(var(--hh) - 17px);margin:0;font-size:12px;filter:none;line-height:1.2}
  /* 登入後：章魚哥縮小靠右，和「標題＋上傳照片」同一橫排、等高 */
  #panel{--ph:clamp(76px,calc((100vw - 154px)/2.2335),130px);--iw:calc(var(--ph)*1.3585)}
- #panel.in{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:12px;align-content:start;padding-top:11px}
+ #panel.in{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:12px;align-content:start;padding-top:20px}
  #panel.in #reg{display:contents}
  #panel.in #lg{grid-column:2;grid-row:2;width:var(--iw);height:var(--ph);margin:0;align-self:start;justify-self:end;transform:scale(1.05);transform-origin:100% 50%}
  #panel.in #lg:hover,#panel.in #lg:focus-visible{transform:scale(1.05)}
