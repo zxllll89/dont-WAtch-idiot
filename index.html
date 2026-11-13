@@ -628,7 +628,7 @@ html.introout body>*:not(#intro){transition:filter 1.5s ease-in-out}
    <h4 id="chead">留言</h4>
    <div id="clist"></div>
    <div class="cform">
-    <input type="text" id="cname" maxlength="12" placeholder="暱稱（選填）">
+    <input type="text" id="cname" maxlength="12" placeholder="暱稱（選填）" autocomplete="off">
     <textarea id="ctext" maxlength="100" placeholder="寫下你的留言…（最多 100 字）"></textarea>
     <div class="crow"><button type="button" class="btn" id="csend">送出留言</button><button type="button" class="btn" id="mclose">關閉</button></div>
    </div>
@@ -1175,13 +1175,14 @@ function saveOrder(){
 
 /* ---------- 留言：任何人可新增；刪除需登入 ---------- */
 const CKEY='hof-comments-v1',NKEY='hof-nick';
+try{localStorage.removeItem(NKEY)}catch(e){} /* 清掉舊版存在這台裝置上的暱稱 */
 function loadCmts(){try{return JSON.parse(localStorage.getItem(CKEY)||'{}')}catch(e){return {}}}
 function saveCmts(c){try{localStorage.setItem(CKEY,JSON.stringify(c))}catch(e){toast('瀏覽器儲存空間不足')}}
 let cQuery=null,cCb=null,cMid=null,cList=[];
 function unwatchComments(){if(cQuery&&cCb)cQuery.off('value',cCb);cQuery=cCb=null;cMid=null}
 function watchComments(m){
  unwatchComments();cMid=m.id;
- try{$('cname').value=localStorage.getItem(NKEY)||''}catch(e){}
+ $('cname').value=''; /* 不記住暱稱：每次打開都是空的 */
  $('ctext').value='';
  if(FB_ON&&membersRef){
   cQuery=firebase.database().ref('comments/'+m.id).orderByChild('ts');
@@ -1221,7 +1222,6 @@ $('csend').onclick=()=>{
  if(!cMid)return;
  const text=$('ctext').value.trim(),name=$('cname').value.trim();
  if(!text){toast('請輸入留言內容');return}
- try{localStorage.setItem(NKEY,name)}catch(e){}
  const rec={text,ts:Date.now()};if(name)rec.name=name;
  if(FB_ON){
   if(!membersRef){toast('尚未連線，請稍後再試');return}
