@@ -962,7 +962,13 @@ function caretPos(el,idx){
  m.remove();return{x,y,lh};
 }
 function hideFmt(){fmtEl=null;fmtbar.hidden=true}
+/* 滑鼠拖曳選取時先不要跳出工具列，等滑鼠放開才出現 */
+let fmtMouseDown=false;
+addEventListener('mousedown',e=>{if(e.button===0&&!fmtbar.contains(e.target)){fmtMouseDown=true;fmtbar.hidden=true}},true);
+addEventListener('mouseup',()=>{if(fmtMouseDown){fmtMouseDown=false;schedFmt()}},true);
+addEventListener('blur',()=>{fmtMouseDown=false});
 function placeFmt(){
+ if(fmtMouseDown){fmtbar.hidden=true;return}
  const el=fmtEl;if(!fmtOK(el)){hideFmt();return}
  const a=el.selectionStart,b=el.selectionEnd;if(a===b||!el.value.slice(a,b).trim()){hideFmt();return}
  const er=el.getBoundingClientRect(),p1=caretPos(el,a),p2=caretPos(el,b);
